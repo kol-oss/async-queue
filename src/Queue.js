@@ -5,17 +5,22 @@ const {COLORS} = require("./config");
 
 class Queue {
     constructor(streams = 4, options) {
-        const { paused = true } = options;
+        const {
+            paused = true,
+            logging = false
+        } = options;
 
-        this.active = 0;
         this.streams = streams;
-        this.time = undefined;
         this.paused = paused;
-        this.proccessed = new Map();
-        this.waiting = [];
+        this.logging = logging;
+
+        this.time = undefined;
         this.onSuccess = this.#log;
         this.onFail = this.#log;
         this.finished = false;
+
+        this.proccessed = new Map();
+        this.waiting = [];
     }
 
     push(fn, ...args) {
@@ -41,7 +46,6 @@ class Queue {
             })
             .finally(() => {
                 this.proccessed.delete(uuid);
-                this.active--;
 
                 this.#execute();
             });
@@ -52,7 +56,6 @@ class Queue {
 
         const uuid = Math.random();
         this.proccessed.set(uuid, task);
-        this.active++;
 
         this.#log(`Starting next task...`, "process");
 
@@ -63,7 +66,7 @@ class Queue {
     #execute() {
         if (this.paused) return;
 
-        const freeStreams = this.streams - this.active;
+        const freeStreams = this.streams - this.proccessed.size;
         if (!freeStreams || !this.waiting.length) return;
 
         this.#shift();
@@ -88,6 +91,8 @@ class Queue {
     }
 
     resume() {
+        if (!this.paused) return this;
+
         this.paused = false;
 
         if (this.time) this.#setTimeout();
@@ -120,6 +125,8 @@ class Queue {
     }
 
     #log(message, type = "default") {
+        if (!this.logging) return;
+
         const prefix = `[Q]`;
 
         const fullMessage = `${prefix} ${message}`
