@@ -24,7 +24,7 @@ class AsyncObject {
 
                 this.controller = new AbortController();
                 this.finished = true;
-                resolve(data);
+                resolve({ data, args: this.args });
             });
 
             signal.addEventListener("abort", () => {

@@ -1,9 +1,12 @@
 "use strict";
 
+const AsyncObject = require("./AsyncObject");
 const {COLORS} = require("./config");
 
 class Queue {
-    constructor(streams, paused = true) {
+    constructor(streams = 4, options) {
+        const { paused = true } = options;
+
         this.active = 0;
         this.streams = streams;
         this.time = undefined;
@@ -15,9 +18,10 @@ class Queue {
         this.finished = false;
     }
 
-    push(task) {
+    push(fn, ...args) {
         if (this.finished) throw new Error("Queue is finished");
 
+        const task = new AsyncObject(fn, ...args);
         this.waiting.push(task);
 
         if (!this.paused) this.#execute();
@@ -27,9 +31,9 @@ class Queue {
     #handle(uuid, task) {
         task
             .execute()
-            .then((data) => {
+            .then(({ data, args }) => {
                 this.#log(`Task completed with result:`, "success");
-                this.onSuccess(data)
+                this.onSuccess(data, args)
             })
             .catch((error) => {
                 this.#log(`Task failed with error:`, "error");
