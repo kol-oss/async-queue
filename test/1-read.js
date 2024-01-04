@@ -10,6 +10,7 @@ queue
     .push(fs.readFile, "./resources/light.txt", "utf-8")
     .push(fs.readFile, "./resources/heavy.txt", "utf-8")
     .success((data) => console.log(data))
-    .complete(() => console.log("completed"))
+    .complete(() => console.log("completed"));
+
 queue
     .resume();

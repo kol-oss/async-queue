@@ -1,7 +1,7 @@
 "use strict";
 
 const crypto = require("node:crypto");
-const EventEmitter = require('node:events');
+const EventEmitter = require("node:events");
 
 const AsyncObject = require("./AsyncObject");
 
@@ -35,11 +35,11 @@ class Queue {
     #handle(uuid, task) {
         task
             .execute()
-            .then(({data, args}) => {
-                this.events.emit("success", data, args)
+            .then(({ data, args }) => {
+                this.events.emit("success", data, args);
             })
             .catch((error) => {
-                this.events.emit("fail", error)
+                this.events.emit("fail", error);
             })
             .finally(() => {
                 this.proccessed.delete(uuid);
@@ -112,7 +112,7 @@ class Queue {
             task.abort();
             task.controller = new AbortController();
 
-            this.proccessed.delete(uuid)
+            this.proccessed.delete(uuid);
             this.waiting.unshift(task);
         }
 

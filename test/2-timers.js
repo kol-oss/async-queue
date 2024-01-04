@@ -17,6 +17,6 @@ queue
     .success((data, args) => {
         if (data) console.log(data);
 
-        console.log(`Timer with time ${args} expired`)
+        console.log(`Timer with time ${args} expired`);
     })
-    .complete(() => console.log("Execution finished"))
+    .complete(() => console.log("Execution finished"));
