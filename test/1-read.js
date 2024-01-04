@@ -2,7 +2,7 @@
 
 const fs = require("node:fs");
 
-const Queue = require("../src/Queue");
+const Queue = require("../lib/Queue");
 const { log } = require("./logger");
 
 // Set max concurrent streams: 2

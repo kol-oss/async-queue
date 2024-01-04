@@ -1,6 +1,6 @@
 "use strict";
 
-const Queue = require("../src/Queue");
+const Queue = require("../lib/Queue");
 const { log } = require("./logger");
 
 const timeout = (ms, callback) => setTimeout(callback, ms);

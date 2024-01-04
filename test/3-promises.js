@@ -2,7 +2,7 @@
 
 const { log } = require("./logger");
 
-const Queue = require("../src/Queue");
+const Queue = require("../lib/Queue");
 
 // Set max concurrent streams: 2
 // Paused from the beginning
