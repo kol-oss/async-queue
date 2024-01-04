@@ -1,15 +1,24 @@
 "use strict";
 
+const callbackify = (fn) => (...args) => {
+    const callback = args.pop();
+    const promise = fn(...args);
+
+    promise
+        .then((data) => {
+            callback(null, data);
+        })
+        .catch((err) => {
+            callback(err);
+        });
+};
+
 class AsyncObject {
-    constructor(fn, ...args)  {
-        this.fn = fn;
+    constructor(fn, ...args) {
+        this.fn = (fn[Symbol.toStringTag] === 'AsyncFunction') ? callbackify(fn) : fn;
         this.args = args;
         this.finished = false;
         this.controller = new AbortController();
-    }
-
-    static set(fn) {
-        return (...args) => new AsyncObject(fn, ...args);
     }
 
     execute() {
@@ -24,7 +33,7 @@ class AsyncObject {
 
                 this.controller = new AbortController();
                 this.finished = true;
-                resolve({ data, args: this.args });
+                resolve({data, args: this.args});
             });
 
             signal.addEventListener("abort", () => {
@@ -32,6 +41,7 @@ class AsyncObject {
             });
         })
     }
+
     abort() {
         const {signal} = this.controller;
         if (signal.aborted) return;
