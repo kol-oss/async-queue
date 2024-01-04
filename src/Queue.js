@@ -138,6 +138,7 @@ class Queue {
         setTimeout(() => {
             this.finished = true;
             this.pause();
+            this.events.emit("complete");
         }, this.time);
     }
 }
