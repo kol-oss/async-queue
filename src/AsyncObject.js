@@ -1,15 +1,15 @@
 "use strict";
 
+const { callbackify } = require("./adapters");
+
+const isAsync = (fn) => (fn[Symbol.toStringTag] === 'AsyncFunction');
+
 class AsyncObject {
-    constructor(fn, ...args)  {
-        this.fn = fn;
+    constructor(fn, ...args) {
+        this.fn = isAsync(fn) ? callbackify(fn) : fn;
         this.args = args;
         this.finished = false;
         this.controller = new AbortController();
-    }
-
-    static set(fn) {
-        return (...args) => new AsyncObject(fn, ...args);
     }
 
     execute() {
@@ -19,19 +19,21 @@ class AsyncObject {
                 reject(new Error("Operation is aborted..."));
             }
 
-            this.fn(...this.args, (err, data) => {
+            const id = this.fn(...this.args, (err, data) => {
                 if (err) reject(err);
 
                 this.controller = new AbortController();
                 this.finished = true;
-                resolve({ data, args: this.args });
+                resolve({data, args: this.args});
             });
 
             signal.addEventListener("abort", () => {
+                if (id) clearTimeout(id);
                 reject(new Error("Operation is aborted..."));
             });
         })
     }
+
     abort() {
         const {signal} = this.controller;
         if (signal.aborted) return;

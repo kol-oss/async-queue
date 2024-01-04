@@ -1,22 +1,21 @@
 "use strict";
 
+const crypto = require("node:crypto");
+const EventEmitter = require('node:events');
+
 const AsyncObject = require("./AsyncObject");
-const {COLORS} = require("./config");
 
 class Queue {
     constructor(streams = 4, options) {
         const {
             paused = true,
-            logging = false
         } = options;
 
+        this.events = new EventEmitter();
         this.streams = streams;
         this.paused = paused;
-        this.logging = logging;
 
         this.time = undefined;
-        this.onSuccess = this.#log;
-        this.onFail = this.#log;
         this.finished = false;
 
         this.proccessed = new Map();
@@ -36,31 +35,32 @@ class Queue {
     #handle(uuid, task) {
         task
             .execute()
-            .then(({ data, args }) => {
-                this.#log(`Task completed with result:`, "success");
-                this.onSuccess(data, args)
+            .then(({data, args}) => {
+                this.events.emit("success", data, args)
             })
             .catch((error) => {
-                this.#log(`Task failed with error:`, "error");
-                this.onFail(error)
+                this.events.emit("fail", error)
             })
             .finally(() => {
                 this.proccessed.delete(uuid);
 
+                if (this.waiting.length === 0 && this.proccessed.size === 0) {
+                    this.events.emit("complete");
+                    return;
+                }
                 this.#execute();
             });
+
+        this.#execute();
     }
 
     #shift() {
         const task = this.waiting.shift();
 
-        const uuid = Math.random();
+        const uuid = crypto.randomUUID();
         this.proccessed.set(uuid, task);
 
-        this.#log(`Starting next task...`, "process");
-
         this.#handle(uuid, task);
-        this.#execute();
     }
 
     #execute() {
@@ -81,12 +81,12 @@ class Queue {
     }
 
     success(callback) {
-        this.onSuccess = callback;
+        this.events.on("success", callback);
         return this;
     }
 
     fail(callback) {
-        this.onFail = callback;
+        this.events.on("fail", callback);
         return this;
     }
 
@@ -94,6 +94,7 @@ class Queue {
         if (!this.paused) return this;
 
         this.paused = false;
+        this.events.emit("resume");
 
         if (this.time) this.#setTimeout();
 
@@ -103,7 +104,9 @@ class Queue {
 
     pause() {
         if (this.paused) return;
+
         this.paused = true;
+        this.events.emit("pause");
 
         for (const [uuid, task] of this.proccessed.entries()) {
             task.abort();
@@ -116,23 +119,27 @@ class Queue {
         return this;
     }
 
-    #setTimeout() {
-        setTimeout(() => {
-            this.#log("Timer expired", "error");
-            this.finished = true;
-            this.pause();
-        }, this.time);
+    complete(callback) {
+        this.events.on("complete", callback);
+        return this;
     }
 
-    #log(message, type = "default") {
-        if (!this.logging) return;
+    onPause(callback) {
+        this.events.on("pause", callback);
+        return this;
+    }
 
-        const prefix = `[Q]`;
+    onResume(callback) {
+        this.events.on("resume", callback);
+        return this;
+    }
 
-        const fullMessage = `${prefix} ${message}`
-        const color = COLORS[type];
-
-        console.log(color + fullMessage + COLORS.reset);
+    #setTimeout() {
+        setTimeout(() => {
+            this.finished = true;
+            this.pause();
+            this.events.emit("complete");
+        }, this.time);
     }
 }
 
