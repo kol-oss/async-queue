@@ -1,22 +1,20 @@
 "use strict";
 
+const crypto = require("node:crypto");
 const AsyncObject = require("./AsyncObject");
-const {COLORS} = require("./config");
 
 class Queue {
     constructor(streams = 4, options) {
         const {
             paused = true,
-            logging = false
         } = options;
 
         this.streams = streams;
         this.paused = paused;
-        this.logging = logging;
 
         this.time = undefined;
-        this.onSuccess = this.#log;
-        this.onFail = this.#log;
+        this.onSuccess = null;
+        this.onFail = null;
         this.finished = false;
 
         this.proccessed = new Map();
@@ -37,11 +35,11 @@ class Queue {
         task
             .execute()
             .then(({ data, args }) => {
-                this.#log(`Task completed with result:`, "success");
+                //this.#log(`Task completed with result:`, "success");
                 this.onSuccess(data, args)
             })
             .catch((error) => {
-                this.#log(`Task failed with error:`, "error");
+                //this.#log(`Task failed with error:`, "error");
                 this.onFail(error)
             })
             .finally(() => {
@@ -54,10 +52,10 @@ class Queue {
     #shift() {
         const task = this.waiting.shift();
 
-        const uuid = Math.random();
+        const uuid = crypto.randomUUID();
         this.proccessed.set(uuid, task);
 
-        this.#log(`Starting next task...`, "process");
+        //this.#log(`Starting next task...`, "process");
 
         this.#handle(uuid, task);
         this.#execute();
@@ -118,21 +116,10 @@ class Queue {
 
     #setTimeout() {
         setTimeout(() => {
-            this.#log("Timer expired", "error");
+            //this.#log("Timer expired", "error");
             this.finished = true;
             this.pause();
         }, this.time);
-    }
-
-    #log(message, type = "default") {
-        if (!this.logging) return;
-
-        const prefix = `[Q]`;
-
-        const fullMessage = `${prefix} ${message}`
-        const color = COLORS[type];
-
-        console.log(color + fullMessage + COLORS.reset);
     }
 }
 

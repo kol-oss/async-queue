@@ -5,8 +5,7 @@ const Queue = require("../src/Queue");
 const timeout = (ms, callback) => setTimeout(callback, ms);
 
 const queue = new Queue(2, {
-    paused: false,
-    logging: true
+    paused: false
 });
 
 queue
