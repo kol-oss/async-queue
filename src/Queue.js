@@ -33,6 +33,8 @@ class Queue {
     }
 
     #handle(uuid, task) {
+        const timer = this.#setAbortion(task);
+
         task
             .execute()
             .then(({ data, args }) => {
@@ -42,6 +44,7 @@ class Queue {
                 this.events.emit("fail", error);
             })
             .finally(() => {
+                clearTimeout(timer);
                 this.proccessed.delete(uuid);
 
                 if (this.waiting.length === 0 && this.proccessed.size === 0) {
@@ -52,6 +55,15 @@ class Queue {
             });
 
         this.#execute();
+    }
+
+    #setAbortion(task) {
+        if (!this.time) return;
+
+        return setTimeout(() => {
+            this.events.emit("timeout");
+            task.abort();
+        }, this.time);
     }
 
     #shift() {
@@ -75,8 +87,6 @@ class Queue {
     timeout(ms) {
         this.time = ms;
 
-        if (!this.paused) this.#setTimeout();
-
         return this;
     }
 
@@ -95,8 +105,6 @@ class Queue {
 
         this.paused = false;
         this.events.emit("resume");
-
-        if (this.time) this.#setTimeout();
 
         this.#execute();
         return this;
@@ -134,12 +142,9 @@ class Queue {
         return this;
     }
 
-    #setTimeout() {
-        setTimeout(() => {
-            this.finished = true;
-            this.pause();
-            this.events.emit("complete");
-        }, this.time);
+    onTimeout(callback) {
+        this.events.on("timeout", callback);
+        return this;
     }
 }
 
