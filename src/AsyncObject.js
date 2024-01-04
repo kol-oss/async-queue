@@ -2,7 +2,7 @@
 
 const { callbackify } = require("./adapters");
 
-const isAsync = (fn) => (fn[Symbol.toStringTag] === 'AsyncFunction');
+const isAsync = (fn) => (fn[Symbol.toStringTag] === "AsyncFunction");
 
 class AsyncObject {
     constructor(fn, ...args) {
@@ -14,7 +14,7 @@ class AsyncObject {
 
     execute() {
         return new Promise((resolve, reject) => {
-            const {signal} = this.controller;
+            const { signal } = this.controller;
             if (signal.aborted) {
                 reject(new Error("Operation is aborted..."));
             }
@@ -24,18 +24,18 @@ class AsyncObject {
 
                 this.controller = new AbortController();
                 this.finished = true;
-                resolve({data, args: this.args});
+                resolve({ data, args: this.args });
             });
 
             signal.addEventListener("abort", () => {
                 if (id) clearTimeout(id);
                 reject(new Error("Operation is aborted..."));
             });
-        })
+        });
     }
 
     abort() {
-        const {signal} = this.controller;
+        const { signal } = this.controller;
         if (signal.aborted) return;
 
         if (!this.finished) this.controller.abort();

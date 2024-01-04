@@ -1,14 +1,14 @@
 "use strict";
 
 const crypto = require("node:crypto");
-const EventEmitter = require('node:events');
+const EventEmitter = require("node:events");
 
 const AsyncObject = require("./AsyncObject");
 
 class Queue {
-    constructor(streams = 4, options) {
+    constructor(streams = 4, options = { paused: true }) {
         const {
-            paused = true,
+            paused
         } = options;
 
         this.events = new EventEmitter();
@@ -33,15 +33,19 @@ class Queue {
     }
 
     #handle(uuid, task) {
+        const timer = this.#setAbortion(task);
+
+        this.events.emit("execute", task.args);
         task
             .execute()
-            .then(({data, args}) => {
-                this.events.emit("success", data, args)
+            .then(({ data, args }) => {
+                this.events.emit("success", data, args);
             })
             .catch((error) => {
-                this.events.emit("fail", error)
+                this.events.emit("fail", error);
             })
             .finally(() => {
+                clearTimeout(timer);
                 this.proccessed.delete(uuid);
 
                 if (this.waiting.length === 0 && this.proccessed.size === 0) {
@@ -52,6 +56,15 @@ class Queue {
             });
 
         this.#execute();
+    }
+
+    #setAbortion(task) {
+        if (!this.time) return;
+
+        return setTimeout(() => {
+            this.events.emit("timeout");
+            task.abort();
+        }, this.time);
     }
 
     #shift() {
@@ -75,18 +88,6 @@ class Queue {
     timeout(ms) {
         this.time = ms;
 
-        if (!this.paused) this.#setTimeout();
-
-        return this;
-    }
-
-    success(callback) {
-        this.events.on("success", callback);
-        return this;
-    }
-
-    fail(callback) {
-        this.events.on("fail", callback);
         return this;
     }
 
@@ -95,8 +96,6 @@ class Queue {
 
         this.paused = false;
         this.events.emit("resume");
-
-        if (this.time) this.#setTimeout();
 
         this.#execute();
         return this;
@@ -112,15 +111,30 @@ class Queue {
             task.abort();
             task.controller = new AbortController();
 
-            this.proccessed.delete(uuid)
+            this.proccessed.delete(uuid);
             this.waiting.unshift(task);
         }
 
         return this;
     }
 
-    complete(callback) {
+    onSuccess(callback) {
+        this.events.on("success", callback);
+        return this;
+    }
+
+    onFail(callback) {
+        this.events.on("fail", callback);
+        return this;
+    }
+
+    onComplete(callback) {
         this.events.on("complete", callback);
+        return this;
+    }
+
+    onExecute(callback) {
+        this.events.on("execute", callback);
         return this;
     }
 
@@ -134,12 +148,9 @@ class Queue {
         return this;
     }
 
-    #setTimeout() {
-        setTimeout(() => {
-            this.finished = true;
-            this.pause();
-            this.events.emit("complete");
-        }, this.time);
+    onTimeout(callback) {
+        this.events.on("timeout", callback);
+        return this;
     }
 }
 

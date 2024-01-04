@@ -1,0 +1,30 @@
+{
+  "name": "async-queue",
+  "version": "1.0.0",
+  "description": "Async queue abstraction build on NodeJS",
+  "main": "Queue.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kol-oss/async-queue.git"
+  },
+  "keywords": [
+    "async",
+    "queue",
+    "nodejs"
+  ],
+  "author": "Khozhainov Mykola",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/kol-oss/async-queue/issues"
+  },
+  "homepage": "https://github.com/kol-oss/async-queue#readme",
+  "devDependencies": {
+    "eslint": "^8.56.0"
+  }
+}

@@ -15,4 +15,4 @@ const callbackify = (fn) => (...args) => {
 
 module.exports = {
     callbackify
-}
+};
