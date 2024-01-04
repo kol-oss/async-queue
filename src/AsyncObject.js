@@ -8,7 +8,6 @@ class AsyncObject {
     constructor(fn, ...args) {
         this.fn = isAsync(fn) ? callbackify(fn) : fn;
         this.args = args;
-        this.finished = false;
         this.controller = new AbortController();
     }
 
@@ -23,7 +22,6 @@ class AsyncObject {
                 if (err) reject(err);
 
                 this.controller = new AbortController();
-                this.finished = true;
                 resolve({ data, args: this.args });
             });
 
@@ -38,7 +36,7 @@ class AsyncObject {
         const { signal } = this.controller;
         if (signal.aborted) return;
 
-        if (!this.finished) this.controller.abort();
+        this.controller.abort();
     }
 }
 
