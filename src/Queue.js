@@ -6,9 +6,9 @@ const EventEmitter = require("node:events");
 const AsyncObject = require("./AsyncObject");
 
 class Queue {
-    constructor(streams = 4, options) {
+    constructor(streams = 4, options = { paused: true }) {
         const {
-            paused = true,
+            paused
         } = options;
 
         this.events = new EventEmitter();
@@ -35,6 +35,7 @@ class Queue {
     #handle(uuid, task) {
         const timer = this.#setAbortion(task);
 
+        this.events.emit("execute", task.args);
         task
             .execute()
             .then(({ data, args }) => {
@@ -90,16 +91,6 @@ class Queue {
         return this;
     }
 
-    success(callback) {
-        this.events.on("success", callback);
-        return this;
-    }
-
-    fail(callback) {
-        this.events.on("fail", callback);
-        return this;
-    }
-
     resume() {
         if (!this.paused) return this;
 
@@ -127,8 +118,23 @@ class Queue {
         return this;
     }
 
-    complete(callback) {
+    onSuccess(callback) {
+        this.events.on("success", callback);
+        return this;
+    }
+
+    onFail(callback) {
+        this.events.on("fail", callback);
+        return this;
+    }
+
+    onComplete(callback) {
         this.events.on("complete", callback);
+        return this;
+    }
+
+    onExecute(callback) {
+        this.events.on("execute", callback);
         return this;
     }
 

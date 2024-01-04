@@ -1,22 +1,35 @@
 "use strict";
 
 const Queue = require("../src/Queue");
+const { log } = require("./logger");
 
 const timeout = (ms, callback) => setTimeout(callback, ms);
 
-const queue = new Queue(2, {
-    paused: false
-});
+// Set max concurrent streams: 3
+// Active from the beginning
+const queue = new Queue(3, { paused: false });
 
+// Set listeners callbacks
 queue
-    .push(timeout, 200)
-    .push(timeout, 900)
-    .push(timeout, 15000)
-    .push(timeout, 300)
-    .timeout(1000)
-    .success((data, args) => {
-        if (data) console.log(data);
-
-        console.log(`Timer with time ${args} expired`);
+    .onExecute((args) => log(`Timer [${args}] started`, "process"))
+    .onResume(() => log("Execution started", "process"))
+    .onSuccess((data, args) => {
+        log(`Timer [${args}] was completed`, "success");
     })
-    .complete(() => console.log("Execution finished"));
+    .onFail((error) => log(error, "error"))
+    .onComplete(() => log("Execution finished", "process"));
+
+// Add first timers to be executed
+queue
+    .push(timeout, 10000)
+    .push(timeout, 1000)
+    .push(timeout, 3000);
+
+// Add timers after 1500 msec
+setTimeout(() => {
+    log("1500 msec expired", "process");
+    queue
+        .push(timeout, 2100)
+        .push(timeout, 2200)
+        .push(timeout, 2300);
+}, 1500);
