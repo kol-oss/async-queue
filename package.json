@@ -1,5 +1,5 @@
 {
-  "name": "async-queue",
+  "name": "@kol-oss/async-queue",
   "version": "1.0.0",
   "description": "Async queue abstraction build on NodeJS",
   "main": "async-queue.js",
