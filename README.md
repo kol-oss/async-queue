@@ -21,7 +21,7 @@ npm i @kol-oss/async-queue
 ```js
 "use strict";
 
-const Queue = require("async-queue");
+const { Queue } = require("@kol-oss/async-queue");
 const { log } = require("./logger");
 
 const timeout = (ms, callback) => setTimeout(callback, ms);
