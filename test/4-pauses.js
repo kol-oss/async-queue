@@ -5,9 +5,9 @@ const { log } = require("./logger");
 
 const timeout = (ms, callback) => setTimeout(callback, ms);
 
-// Set max concurrent streams: 3
+// Set max concurrent streams: 2
 // Active from the beginning
-const queue = new Queue(3, { paused: false });
+const queue = new Queue(2, { paused: false });
 
 // Set listeners callbacks
 queue
@@ -22,14 +22,16 @@ queue
 // Add first timers to be executed
 queue
     .push(timeout, 10000)
-    .push(timeout, 1000)
-    .push(timeout, 3000);
+    .push(timeout, 1000);
 
-// Add timers after 1500 msec
+// Pause after executing one task
 setTimeout(() => {
-    log("1500 msec expired", "process");
-    queue
-        .push(timeout, 2100)
-        .push(timeout, 2200)
-        .push(timeout, 2300);
-}, 1500);
+    log("Pausing after 2000 msec...", "process");
+    queue.pause();
+}, 2000);
+
+// Resume executing
+setTimeout(() => {
+    log("Resume execution...", "process");
+    queue.resume();
+}, 3000);
