@@ -11,7 +11,7 @@ const queue = new Queue(2);
 // Set listeners callbacks
 queue
     .onResume(() => log("Execution started", "process"))
-    .onSuccess((data, args) => {
+    .onSuccess(async (data, args) => {
         log(`URL ${args} parsed:`, "success");
         log(data);
     })
